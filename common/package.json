@@ -1,5 +1,5 @@
 {
-  "name": "medium/common",
+  "name": "@shivaram19/medium-common",
   "version": "1.0.0",
   "description": "",
   "main": "dist/index.js",
@@ -8,5 +8,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "zod": "^3.23.8"
+  }
 }
