@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
@@ -12,43 +12,33 @@ export const userRouter = new Hono<{
 
 userRouter.post('/signup',async (c) => {
 
-  console.log("1")
-  
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate())
 
-  console.log("2")
-
-
-  const body = await c.req.json()
-  const alreadyUser = await prisma.user.findUnique({ where: { email: body.email } })
-
-  console.log("3")
-
-
-  if(alreadyUser) {
-   c.status(403)
-   return c.json({msg: "hakunamatata"})
-  }
-
-
-  console.log("4")
-
-  const newUser = await prisma.user.create({
-    data: {
-      email: body.email, 
+  const body = await c.req.json();
+  
+  const alreadyUser = await prisma.user.findUnique({
+    where:{
+      email: body.email
+    }
+  })
+  if(alreadyUser) return c.text("already Registered please login to continue")
+  const user = await prisma.user.create({
+    data:{
+      email: body.email,
       password: body.password
     }
   })
 
-  const token = await sign({ id: newUser.id }, "ashhuhd" )
+  const token = await sign({id : user.id}, "secret")
 
-  return c.json({  token })
-
+  return c.json({
+    token: token
+  })
 })
 
-userRouter.post('/api/v1/user/signin',async (c) => {
+userRouter.post('/signin',async (c) => {
 	const prisma = new PrismaClient({
 		datasourceUrl: c.env?.DATABASE_URL	,
 	}).$extends(withAccelerate());
