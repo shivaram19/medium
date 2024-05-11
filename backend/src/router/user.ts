@@ -1,11 +1,13 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { sign } from "hono/jwt";
+import { sign } from "hono/jwt"
+import { signInInput } from "@shivaram19/medium-common";
 
 export const userRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string ;
+    JWT_SECRET: string;
   }
 }>()
 
@@ -17,7 +19,13 @@ userRouter.post('/signup',async (c) => {
   }).$extends(withAccelerate())
 
   const body = await c.req.json();
-  
+  const { success } = signInInput.safeParse(body)
+  if(!success){
+    c.status(403)
+    return c.json({
+      msg:"input details are wrong"
+    })
+  }
   const alreadyUser = await prisma.user.findUnique({
     where:{
       email: body.email
@@ -31,7 +39,7 @@ userRouter.post('/signup',async (c) => {
     }
   })
 
-  const token = await sign({id : user.id}, "secret")
+  const token = await sign({id : user.id}, c.env.JWT_SECRET)
 
   return c.json({
     token: token
@@ -44,6 +52,13 @@ userRouter.post('/signin',async (c) => {
 	}).$extends(withAccelerate());
 
 	const body = await c.req.json();
+  const { success } = signInInput.safeParse(body);
+  if(!success){
+      c.status(403)
+      return c.json({
+        msg:"input details are wrong"
+      })
+    } 
 	const user = await prisma.user.findUnique({where: { email: body.email } } );
 
 	if (!user) {
@@ -51,6 +66,6 @@ userRouter.post('/signin',async (c) => {
 		return c.json({ error: "user not found" });
 	}
 
-	const jwt = await sign({ id: user.id }, "secret");
+	const jwt = await sign({ id: user.id }, c.env.JWT_SECRET);
 	return c.json({ jwt }); 
 })

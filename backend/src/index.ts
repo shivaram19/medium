@@ -4,6 +4,7 @@ import { userRouter } from './router/user';
 const app = new Hono<{
   Bindings:{
     DATABASE_URL: string;
+    JWT_SECRET: string;
   }
 }>();
 
